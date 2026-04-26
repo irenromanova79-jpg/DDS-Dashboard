@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ДДС и Дашборд руководителя · Апрель 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+/* ── RESET & BASE ────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+  font-family: 'Golos Text', sans-serif;
+  background: #f5f6f8;
+  color: #1a1d23;
+  min-height: 100vh;
+}
+
+/* ── HEADER ──────────────────────────────────────────── */
+.hdr {
+  position: sticky; top: 0; z-index: 100;
+  background: #fff;
+  border-bottom: 1px solid #e4e6ea;
+  padding: 0 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.07);
+}
+.hdr-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0 0;
+}
+.hdr-brand { display: flex; align-items: center; gap: 10px; }
+.hdr-dot { width: 8px; height: 8px; background: #1e4fdb; border-radius: 50%; }
+.hdr-title { font-size: 15px; font-weight: 600; color: #1a1d23; }
+.hdr-period {
+  font-size: 11px; color: #6b7280;
+  background: #f5f6f8; border: 1px solid #e4e6ea;
+  padding: 3px 10px; border-radius: 20px;
+}
+.tabs { display: flex; gap: 2px; margin-top: 10px; }
+.tab {
+  padding: 9px 20px; font-size: 13px; font-weight: 500;
+  border: none; background: none; cursor: pointer;
+  color: #6b7280; border-bottom: 2px solid transparent;
+  font-family: 'Golos Text', sans-serif; transition: color .15s;
+}
+.tab.active { color: #1e4fdb; border-bottom-color: #1e4fdb; }
+.tab:hover:not(.active) { color: #1a1d23; }
+
+/* ── SCREENS ─────────────────────────────────────────── */
+.screen { display: none; padding: 22px 24px; }
+.screen.active { display: block; }
+
+/* ── KPI CARDS ───────────────────────────────────────── */
+.kpis { display: grid; grid-template-columns: repeat(6,1fr); gap: 12px; margin-bottom: 20px; }
+.kpi {
+  background: #fff; border: 1px solid #e4e6ea;
+  border-radius: 10px; padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.kpi-lbl {
+  font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .06em;
+  color: #6b7280; margin-bottom: 6px;
+}
+.kpi-val {
+  font-size: 18px; font-weight: 600;
+  font-family: 'JetBrains Mono', monospace; line-height: 1.1;
+}
+.kpi-sub { font-size: 10px; color: #6b7280; margin-top: 3px; }
+.kpi-badge {
+  display: inline-flex; align-items: center;
+  font-size: 10px; font-weight: 600;
+  padding: 2px 6px; border-radius: 4px; margin-top: 4px;
+}
+.c-blue   { color: #1e4fdb; }
+.c-green  { color: #059669; }
+.c-red    { color: #dc2626; }
+.c-amber  { color: #d97706; }
+.c-purple { color: #7c3aed; }
+.c-muted  { color: #6b7280; }
+.bg-green  { background: #d1fae5; color: #059669; }
+.bg-red    { background: #fee2e2; color: #dc2626; }
+.bg-amber  { background: #fef3c7; color: #d97706; }
+.bg-blue   { background: #dbeafe; color: #1e4fdb; }
+.bg-purple { background: #ede9fe; color: #7c3aed; }
+
+/* ── DDS TABLE ───────────────────────────────────────── */
+.tbl-wrap {
+  background: #fff; border: 1px solid #e4e6ea;
+  border-radius: 10px; overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+table.dds { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+table.dds thead tr { background: #f5f6f8; border-bottom: 1px solid #e4e6ea; }
+table.dds th {
+  padding: 9px 12px; text-align: right;
+  font-size: 11px; font-weight: 600;
+  color: #6b7280; letter-spacing: .02em;
+}
+table.dds th:first-child { text-align: left; width: 36%; }
+table.dds td {
+  padding: 6px 12px; text-align: right;
+  border-bottom: 1px solid #f0f1f4;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+}
+table.dds td:first-child {
+  text-align: left;
+  font-family: 'Golos Text', sans-serif; font-size: 12.5px;
+}
+.r-sec td {
+  background: #eff4ff; font-weight: 600; font-size: 12px;
+  padding: 9px 12px; color: #1e4fdb;
+  border-bottom: 1px solid #e4e6ea;
+}
+.r-tot td {
+  font-weight: 600; background: #f5f6f8;
+  border-top: 1px solid #e4e6ea;
+  border-bottom: 1px solid #e4e6ea; font-size: 12.5px;
+}
+.r-sub td { font-weight: 500; color: #6b7280; }
+.r-exp { cursor: pointer; }
+.r-exp:hover td { background: #f9fafb; }
+.chev {
+  display: inline-block; font-size: 9px; margin-right: 6px;
+  transition: transform .15s; color: #9ca3af;
+}
+.chev.open { transform: rotate(90deg); }
+.l1 td:first-child { padding-left: 24px; color: #6b7280; }
+.l2 td:first-child { padding-left: 40px; color: #9ca3af; font-size: 12px; }
+.vp { color: #059669; }
+.vn { color: #dc2626; }
+.vd { color: #9ca3af; }
+.tag {
+  display: inline-block; font-size: 9px; padding: 1px 5px;
+  border-radius: 3px; margin-left: 5px; font-weight: 600;
+  font-family: 'Golos Text', sans-serif; vertical-align: middle;
+}
+
+/* ── BALANCES ────────────────────────────────────────── */
+.bal-hdr {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 12px; margin-bottom: 16px;
+}
+.bal-title { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+.bal-ts { font-size: 11px; color: #6b7280; }
+.rbtn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 16px; font-size: 12px; font-weight: 600;
+  border: 1px solid #e4e6ea; border-radius: 8px;
+  background: #fff; cursor: pointer; color: #1a1d23;
+  white-space: nowrap; font-family: 'Golos Text', sans-serif;
+  transition: background .15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.rbtn:hover:not(:disabled) { background: #f5f6f8; }
+.rbtn:disabled { opacity: .45; cursor: default; }
+.spin { animation: spin .9s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.bal-block {
+  background: #fff; border: 1px solid #e4e6ea;
+  border-radius: 10px; overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06); margin-bottom: 12px;
+}
+.brow {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 16px; border-bottom: 1px solid #f0f1f4;
+}
+.brow:last-child { border-bottom: none; }
+.brow.btot  { background: #eff4ff; padding: 14px 16px; }
+.brow.bsec  { background: #f9fafb; }
+.brow.bbank { background: #f9fafb; }
+.brow.bacc  { padding-left: 32px; }
+.brow.bacc .blbl { color: #6b7280; font-size: 12.5px; }
+.blbl { font-size: 13.5px; font-weight: 500; color: #1a1d23; }
+.bval {
+  font-weight: 600; text-align: right;
+  font-family: 'JetBrains Mono', monospace; font-size: 13px;
+}
+.bval-tot {
+  font-size: 20px; font-weight: 700; color: #1e4fdb;
+  font-family: 'JetBrains Mono', monospace;
+}
+.err-b {
+  background: #fee2e2; color: #dc2626;
+  border: 1px solid #fca5a5; border-radius: 8px;
+  padding: 9px 14px; font-size: 12px;
+  margin-bottom: 14px; display: none;
+}
+.footer-note {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: #6b7280;
+  padding: 8px 12px; background: #fff;
+  border: 1px solid #e4e6ea; border-radius: 8px;
+}
+.fdot { width: 6px; height: 6px; border-radius: 50%; background: #059669; flex-shrink: 0; }
+
+/* ── DASHBOARD ───────────────────────────────────────── */
+.dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.ccard {
+  background: #fff; border: 1px solid #e4e6ea;
+  border-radius: 10px; padding: 18px 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.ccard.wide { grid-column: 1 / -1; }
+.ctitle {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .05em; color: #6b7280; margin-bottom: 12px;
+}
+.leg { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; font-size: 11.5px; color: #6b7280; }
+.li { display: flex; align-items: center; gap: 5px; }
+.lsq { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-inner">
+    <div class="hdr-brand">
+      <div class="hdr-dot"></div>
+      <div class="hdr-title">Отчёт о движении денежных средств</div>
+    </div>
+    <div class="hdr-period">30 марта — 26 апреля 2026 · 4 недели</div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="sw('bal',this)">Остатки по счетам</button>
+    <button class="tab" onclick="sw('dds',this)">Детальный ДДС</button>
+    <button class="tab" onclick="sw('dash',this)">Дашборд руководителя</button>
+  </div>
+</div>
+
+<!-- ══ TAB 1: BALANCES ══════════════════════════════════ -->
+<div id="bal" class="screen active">
+  <div class="bal-hdr">
+    <div>
+      <div class="bal-title">Остатки по счетам</div>
+      <div class="bal-ts" id="bts">Данные на 25.04.2026 · нажмите «Обновить» для актуализации</div>
+    </div>
+    <button class="rbtn" id="rbtn" onclick="refreshBal()"><span id="rico">↻</span>&nbsp;Обновить из Sheets</button>
+  </div>
+  <div class="err-b" id="berr"></div>
+  <div class="bal-block" id="balblock"></div>
+  <div class="footer-note">
+    <div class="fdot"></div>
+    <span>Google Sheets · ID: 1-mIST6Tzn_s7nKEIHoQV2GPLpk7cTus9RAgZxVi-GZQ · Листы: Точка · Альфа банк · ИП Коробейникова · Карта · Наличка · Личная карта · Ячейка B1 / D1</span>
+  </div>
+</div>
+
+<!-- ══ TAB 2: DDS ════════════════════════════════════════ -->
+<div id="dds" class="screen">
+  <div class="kpis" id="kpis1"></div>
+  <div class="tbl-wrap">
+    <table class="dds">
+      <thead><tr>
+        <th>Статья / Контрагент</th>
+        <th>Нед. 14<br><span style="font-weight:400;font-size:10px;opacity:.8">30.03–05.04</span></th>
+        <th>Нед. 15<br><span style="font-weight:400;font-size:10px;opacity:.8">06.04–12.04</span></th>
+        <th>Нед. 16<br><span style="font-weight:400;font-size:10px;opacity:.8">13.04–19.04</span></th>
+        <th>Нед. 17<br><span style="font-weight:400;font-size:10px;opacity:.8">20.04–26.04</span></th>
+        <th>Итого</th>
+      </tr></thead>
+      <tbody id="ddstbl"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ TAB 3: DASHBOARD ══════════════════════════════════ -->
+<div id="dash" class="screen">
+  <div class="kpis" id="kpis2"></div>
+  <div class="dash-grid">
+    <div class="ccard wide">
+      <div class="ctitle">Динамика потоков по неделям</div>
+      <div class="leg">
+        <div class="li"><div class="lsq" style="background:#1e4fdb"></div>Поступления</div>
+        <div class="li"><div class="lsq" style="background:#fca5a5"></div>Расходы (без дивид.)</div>
+        <div class="li"><div class="lsq" style="background:#c4b5fd"></div>Дивиденды</div>
+        <div class="li"><div class="lsq" style="background:#059669;border:1px dashed #059669"></div>Чистый поток</div>
+      </div>
+      <div style="position:relative;height:220px"><canvas id="c1"></canvas></div>
+    </div>
+
+    <div class="ccard">
+      <div class="ctitle">Топ-10 контрагентов по поступлениям</div>
+      <div style="position:relative;height:340px"><canvas id="c2"></canvas></div>
+    </div>
+
+    <div class="ccard">
+      <div class="ctitle">Структура расходов (включая дивиденды)</div>
+      <div class="leg" id="exleg"></div>
+      <div style="position:relative;height:270px"><canvas id="c3"></canvas></div>
+    </div>
+
+    <div class="ccard wide">
+      <div class="ctitle">Поступления 2025 (все месяцы) vs Апрель 2026 · Год к году</div>
+      <div class="leg">
+        <div class="li"><div class="lsq" style="background:#bfdbfe"></div>Поступления 2025</div>
+        <div class="li"><div class="lsq" style="background:#1e4fdb"></div>Апрель 2026 (+41%)</div>
+        <div class="li"><div class="lsq" style="background:#f97316;border:1px dashed #f97316"></div>ЧДП 2025</div>
+      </div>
+      <div style="position:relative;height:230px"><canvas id="c4"></canvas></div>
+    </div>
+
+    <div class="ccard wide">
+      <div class="ctitle">Дивиденды 2025 по месяцам vs апрель 2026</div>
+      <div class="leg">
+        <div class="li"><div class="lsq" style="background:#c4b5fd"></div>Дивиденды 2025 (абс. значение)</div>
+        <div class="li"><div class="lsq" style="background:#7c3aed"></div>Апрель 2026 · 1 063 412 руб.</div>
+      </div>
+      <div style="position:relative;height:200px"><canvas id="c5"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ───────────────────────────────────────────────
+const FILE_ID = '1-mIST6Tzn_s7nKEIHoQV2GPLpk7cTus9RAgZxVi-GZQ';
+
+let BAL = {
+  tochka_raschet:172269.54, tochka_deposit:7300130.73,
+  alfa_raschet:-715.44,     alfa_deposit:1066759.08,
+  ip_raschet:515186,        ip_deposit:6400000,
+  karta:-75480.23,          lichnaya:0,
+  nalichka:2194569.95
+};
+
+const R_W  = [1106372,551276,340172,6185795];
+const R_CTR_W = [1105318,547470,288790,6174791];
+const DEP_W   = [1054,3806,51382,11004];
+const R_TOT   = 8183614;
+const E_W     = [354598,149815,506789,781563];
+const E_TOT   = 1792765;
+const D_W     = [104087,-359499,-408000,-400000];
+const D_TOT   = -1063412;
+const NET_W   = R_W.map((r,i)=>r-E_W[i]+D_W[i]);
+const NET_TOT = R_TOT - E_TOT + D_TOT;
+const FOT_TOT = 472966;
+const OPEX_TOT= 983799;
+
+const CTR=[
+  {n:'Сервисстрой-1',     w:[0,0,0,5748000], t:5748000},
+  {n:'Ривьера АО',        w:[848268,0,0,0],  t:848268},
+  {n:'ГорИнжСтрой',       w:[128750,0,18270,39161],t:186181},
+  {n:'Фортресс',          w:[0,172100,0,0],  t:172100},
+  {n:'СУ-93',             w:[0,0,0,153600],  t:153600},
+  {n:'Миг Стройпроект',   w:[0,0,115900,0],  t:115900},
+  {n:'Солбер Инжиниринг', w:[75000,0,0,0],   t:75000},
+  {n:'ХоумЭнерго ООО',    w:[0,68500,0,0],   t:68500},
+  {n:'Гринс',             w:[0,0,67100,0],   t:67100},
+  {n:'Уралрегионстрой',   w:[0,50050,0,0],   t:50050},
+  {n:'Промстройкомплект', w:[0,50000,0,0],   t:50000},
+  {n:'Модус',             w:[15000,19520,19520,0],t:54040},
+  {n:'Грата-Центр ООО',   w:[0,0,0,47250],   t:47250},
+  {n:'ИП Тузов',          w:[0,0,0,44000],   t:44000},
+  {n:'Прочие',            w:[0,0,0,0],       t:388576},
+];
+const EMP=[
+  {n:'Макаров Андрей',fot:150000},{n:'Шульга Сергей',fot:100000},
+  {n:'Кузьмина Вероника',fot:80000},{n:'Батузова Арина',fot:60000},
+  {n:'Тоирова Мехрангез',fot:40000},{n:'Прочие сотрудники',fot:42966},
+];
+const OPEX=[
+  {a:'ЕНП (единый налоговый платёж)',v:508719},{a:'Аренда офиса',v:214381},
+  {a:'Лабораторные испытания',v:203460},{a:'Реклама',v:176549},
+  {a:'Телефон',v:20000},{a:'Экономист',v:15000},{a:'Услуги банка',v:12339},
+  {a:'Интернет',v:7828},{a:'Штрафы, пени',v:5250},{a:'Малоценка',v:5250},
+  {a:'Подбор персонала',v:5238},{a:'Членские взносы',v:4000},
+  {a:'Проезд',v:2740},{a:'Офисные расходы',v:2100},
+];
+const EXST=[
+  {l:'Дивиденды',v:1063412,c:'#7c3aed'},
+  {l:'ЕНП (налоги)',v:508719,c:'#1e4fdb'},
+  {l:'ФОТ',v:472966,c:'#3b82f6'},
+  {l:'Аренда',v:214381,c:'#60a5fa'},
+  {l:'Лаб. испытания',v:203460,c:'#93c5fd'},
+  {l:'Реклама',v:176549,c:'#f97316'},
+  {l:'Покупка авто',v:136943,c:'#fbbf24'},
+  {l:'Прочие',v:79909,c:'#d1d5db'},
+];
+const MN=['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+const R25=[10026483,1879840,9366160,5784401,3782021,6674895,7768343,8786410,4011682,2929713,2580086,4728225];
+const E25=[6022078,2157384,4622434,3368883,1747374,2299871,3035914,2966143,4309326,3780520,2001189,3282772];
+const D25=[328999,990000,290900,420000,735000,355000,738597,306399,653178,1404708,20713,442267];
+
+// ── FORMATTERS ─────────────────────────────────────────
+const f   = n => Math.abs(Math.round(n)).toLocaleString('ru-RU');
+const f2  = n => {const a=Math.abs(n);return(n<0?'−':'')+a.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2});};
+const bpc = n => n<0?'c-red':n===0?'c-muted':'c-green';
+
+// ── TAB SWITCH ─────────────────────────────────────────
+let chartsInited=false;
+function sw(id,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='dash'&&!chartsInited){chartsInited=true;setTimeout(initCharts,60);}
+}
+
+// ── BALANCES ───────────────────────────────────────────
+function calcBal(b){
+  const tochka=b.tochka_raschet+b.tochka_deposit;
+  const alfa_ig=b.alfa_raschet+b.alfa_deposit;
+  const ip=b.ip_raschet+b.ip_deposit;
+  const alfa=alfa_ig+ip;
+  const bez=tochka+alfa;
+  const nal=b.karta+b.lichnaya+b.nalichka;
+  return{tochka,alfa_ig,ip,alfa,bez,nal,total:bez+nal};
+}
+function renderBal(b){
+  const c=calcBal(b);
+  const row=(cls,lbl,val)=>
+    `<div class="brow ${cls}"><div class="blbl">${lbl}</div><div class="bval ${bpc(val)}">${f2(val)}</div></div>`;
+  document.getElementById('balblock').innerHTML=[
+    `<div class="brow btot"><div class="blbl" style="font-weight:600;font-size:14px">Итого</div><div class="bval-tot">${f2(c.total)}</div></div>`,
+    `<div class="brow bsec"><div class="blbl" style="font-weight:600">Безналичные ДС</div><div class="bval ${bpc(c.bez)}" style="font-size:14px">${f2(c.bez)}</div></div>`,
+    `<div class="brow bbank"><div class="blbl" style="font-weight:600">Банк «Точка»</div><div class="bval ${bpc(c.tochka)}">${f2(c.tochka)}</div></div>`,
+    row('bacc','Расчётный счёт ИГ ИНН 9709059240 УСН',b.tochka_raschet),
+    row('bacc','Депозитный счёт ИГ ИНН 9709059240 УСН',b.tochka_deposit),
+    `<div class="brow bbank"><div class="blbl" style="font-weight:600">Альфа-банк</div><div class="bval ${bpc(c.alfa)}">${f2(c.alfa)}</div></div>`,
+    row('bacc','Расчётный счёт ИГ ИНН 9722081781',b.alfa_raschet),
+    row('bacc','Депозитный счёт ИНН 9722081781',b.alfa_deposit),
+    row('bacc','Расчётный счёт ИП Коробейникова',b.ip_raschet),
+    row('bacc','Депозитный счёт ИП Коробейникова',b.ip_deposit),
+    `<div class="brow bsec"><div class="blbl" style="font-weight:600">Наличные ДС</div><div class="bval ${bpc(c.nal)}" style="font-size:14px">${f2(c.nal)}</div></div>`,
+    row('bacc','Карта',b.karta),
+    row('bacc','Личная карта',b.lichnaya),
+    row('bacc','Наличка',b.nalichka),
+  ].join('');
+}
+
+async function refreshBal(){
+  const btn=document.getElementById('rbtn'),ico=document.getElementById('rico'),err=document.getElementById('berr');
+  btn.disabled=true;ico.className='spin';err.style.display='none';
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',max_tokens:1500,
+      system:'Extract data from Google Sheets via Google Drive MCP. Return ONLY valid JSON, no markdown.',
+      messages:[{role:'user',content:`Read Google Sheets file "${FILE_ID}". Cell B1 from each sheet:\n• "Точка ИГ ИНН 9709059240 УСН." B1=tochka_raschet, D1=tochka_deposit\n• "Альфа банк" B1=alfa_raschet, D1=alfa_deposit\n• "ИП  Коробейникова" B1=ip_raschet, D1=ip_deposit\n• "Карта" B1=karta • "Личная карта" B1=lichnaya • "Наличка" B1=nalichka\nReturn ONLY: {"tochka_raschet":172269.54,"tochka_deposit":7300130.73,"alfa_raschet":-715.44,"alfa_deposit":1066759.08,"ip_raschet":515186,"ip_deposit":6400000,"karta":-75480.23,"lichnaya":0,"nalichka":2194569.95}`}],
+      mcp_servers:[{type:'url',url:'https://drivemcp.googleapis.com/mcp/v1',name:'google-drive'}]
+    })});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    const txt=(d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const m=txt.match(/\{[\s\S]*?"tochka_raschet"[\s\S]*?\}/);
+    if(!m)throw new Error('JSON не найден');
+    BAL={...BAL,...JSON.parse(m[0])};
+    renderBal(BAL);
+    document.getElementById('bts').textContent='Обновлено: '+new Date().toLocaleString('ru-RU');
+  }catch(e){
+    err.textContent='⚠ '+e.message+'. Показаны данные последнего обновления.';
+    err.style.display='block';
+  }
+  btn.disabled=false;ico.className='';ico.textContent='↻';
+}
+
+// ── KPI CARDS ──────────────────────────────────────────
+function kpiCard(lbl,val,valCls,badge,badgeCls,sub){
+  return`<div class="kpi">
+    <div class="kpi-lbl">${lbl}</div>
+    <div class="kpi-val ${valCls||''}">${val}</div>
+    ${badge?`<div class="kpi-badge ${badgeCls||''}">${badge}</div>`:''}
+    ${sub?`<div class="kpi-sub">${sub}</div>`:''}
+  </div>`;
+}
+function renderKPIs(el){
+  document.getElementById(el).innerHTML=[
+    kpiCard('Поступления',  f(R_TOT),          'c-blue',  '',              '',          'руб. за период'),
+    kpiCard('Расходы',      f(E_TOT),          'c-red',   '',              '',          'руб. (без дивид.)'),
+    kpiCard('Дивиденды',    f(Math.abs(D_TOT)),'c-purple','↓ выплачено',  'bg-purple', 'руб. нетто'),
+    kpiCard('Чистый поток', f(NET_TOT),        'c-green', '↑ +41% к апр.2025','bg-green','руб.'),
+    kpiCard('ФОТ',          f(FOT_TOT),        'c-amber', '',              '',          'руб. · 6 сотрудников'),
+    kpiCard('Остаток',      f(17572719),        '',        '',              '',          '≈ руб. на 25.04'),
+  ].join('');
+}
+
+// ── DDS TABLE ──────────────────────────────────────────
+function buildDDS(){
+  let h='';
+  const sec=t=>`<tr class="r-sec"><td colspan="6">${t}</td></tr>`;
+
+  h+=sec('I. Операционная деятельность');
+
+  // Поступления
+  h+=`<tr class="r-exp" onclick="tgl('rr')">
+    <td><span class="chev" id="ic-rr">▶</span>Поступления</td>
+    ${R_W.map(v=>`<td class="vp">${f(v)}</td>`).join('')}
+    <td class="vp" style="font-weight:600">${f(R_TOT)}</td>
+  </tr>`;
+  h+=`<tr class="l1 hid" id="rr"><td>— Доход по депозиту</td>${DEP_W.map(v=>`<td class="vp">${v?f(v):'—'}</td>`).join('')}<td class="vp">${f(67245)}</td></tr>`;
+  h+=`<tr class="r-exp l1 hid" id="rr" onclick="tgl('rc')">
+    <td><span class="chev" id="ic-rc">▶</span>— Поступление от покупателей</td>
+    ${R_CTR_W.map(v=>`<td class="vp">${f(v)}</td>`).join('')}
+    <td class="vp" style="font-weight:500">${f(8116369)}</td>
+  </tr>`;
+  CTR.forEach(c=>{
+    h+=`<tr class="l2 hid" id="rc">
+      <td>${c.n}</td>
+      ${c.w.map(v=>`<td>${v?`<span class="vp">${f(v)}</span>`:'<span class="vd">—</span>'}</td>`).join('')}
+      <td style="font-weight:500">${f(c.t)}</td>
+    </tr>`;
+  });
+
+  // ФОТ
+  h+=`<tr class="r-exp" onclick="tgl('ee')">
+    <td><span class="chev" id="ic-ee">▶</span>Заработная плата и ФОТ
+      <span class="tag" style="background:#fef3c7;color:#d97706">ФОТ</span></td>
+    <td class="vd">—</td><td class="vd">—</td>
+    <td class="vn">${f(25000)}</td><td class="vn">${f(447804)}</td>
+    <td class="vn" style="font-weight:600">${f(472804)}</td>
+  </tr>`;
+  h+=`<tr class="l1 hid" id="ee" style="background:#f9fafb">
+    <td style="padding-left:24px;font-size:11px;font-weight:600;color:#6b7280">Сотрудник</td>
+    <td colspan="4" style="font-size:11px;font-weight:600;color:#6b7280;text-align:center">ФОТ апрель</td>
+    <td style="font-size:11px;font-weight:600;color:#6b7280">Итого</td>
+  </tr>`;
+  EMP.forEach(e=>{
+    h+=`<tr class="l2 hid" id="ee">
+      <td>${e.n}</td>
+      <td colspan="4" style="text-align:center;color:#9ca3af">${f(e.fot)}</td>
+      <td style="font-weight:500">${f(e.fot)}</td>
+    </tr>`;
+  });
+  h+=`<tr class="r-sub hid" id="ee"><td style="padding-left:24px">Итого ФОТ (+ налоги 162 руб.)</td><td colspan="4"></td><td class="vn">${f(472966)}</td></tr>`;
+
+  // Операционные расходы
+  const oW=[217909,149815,481789,333340];
+  h+=`<tr class="r-exp" onclick="tgl('oo')">
+    <td><span class="chev" id="ic-oo">▶</span>Операционные расходы</td>
+    ${oW.map(v=>`<td class="vn">${f(v)}</td>`).join('')}
+    <td class="vn" style="font-weight:600">${f(OPEX_TOT)}</td>
+  </tr>`;
+  OPEX.forEach(x=>{
+    h+=`<tr class="l1 hid" id="oo">
+      <td>${x.a}</td>
+      <td colspan="4" style="text-align:center;color:#9ca3af">распределено</td>
+      <td class="vn">${f(x.v)}</td>
+    </tr>`;
+  });
+
+  // Дивиденды
+  h+=`<tr class="r-exp" onclick="tgl('dd')">
+    <td><span class="chev" id="ic-dd">▶</span>Дивиденды
+      <span class="tag" style="background:#ede9fe;color:#7c3aed">отдельно</span></td>
+    ${D_W.map(v=>`<td class="${v<0?'vn':'vp'}">${v<0?'−':''}${f(v)}</td>`).join('')}
+    <td class="vn" style="font-weight:600">${f(Math.abs(D_TOT))}</td>
+  </tr>`;
+  h+=`<tr class="l1 hid" id="dd"><td>ИП Коробейникова (выплата)</td><td class="vd">—</td><td class="vn">${f(400000)}</td><td class="vn">${f(400000)}</td><td class="vn">${f(400000)}</td><td class="vn" style="font-weight:500">${f(1200000)}</td></tr>`;
+  h+=`<tr class="l1 hid" id="dd"><td>Сурин А. (выплата)</td><td class="vd">—</td><td class="vd">—</td><td class="vn">${f(28000)}</td><td class="vd">—</td><td class="vn" style="font-weight:500">${f(28000)}</td></tr>`;
+  h+=`<tr class="l1 hid" id="dd"><td>ДНС Ритейл (нед.15)</td><td class="vd">—</td><td class="vn">${f(54499)}</td><td class="vd">—</td><td class="vd">—</td><td class="vn" style="font-weight:500">${f(54499)}</td></tr>`;
+  h+=`<tr class="l1 hid" id="dd"><td>Карта / прочее (нетто)</td><td class="vp">${f(104087)}</td><td class="vp">${f(95000)}</td><td class="vp">${f(20000)}</td><td class="vd">—</td><td class="vp" style="font-weight:500">${f(219087)}</td></tr>`;
+
+  // Субитог операционной
+  const op_net_w=R_W.map((r,i)=>r-E_W[i]+D_W[i]);
+  h+=`<tr class="r-sub">
+    <td>Итого операционная деятельность</td>
+    ${op_net_w.map(v=>`<td class="${v<0?'vn':'vp'}">${v<0?'−':''}${f(v)}</td>`).join('')}
+    <td class="${NET_TOT<0?'vn':'vp'}" style="font-weight:600">${NET_TOT<0?'−':''}${f(NET_TOT)}</td>
+  </tr>`;
+
+  // II инвест.
+  h+=sec('II. Инвестиционная деятельность');
+  h+=`<tr><td>Покупка авто <span class="tag" style="background:#dcfce7;color:#166534">инвест.</span></td>
+    <td class="vn">−${f(69065)}</td><td class="vd">—</td><td class="vn">−${f(67878)}</td><td class="vd">—</td>
+    <td class="vn" style="font-weight:600">−${f(136943)}</td></tr>`;
+  h+=`<tr class="r-sub"><td>Итого инвестиционная деятельность</td>
+    <td class="vn">−${f(69065)}</td><td class="vd">—</td><td class="vn">−${f(67878)}</td><td class="vd">—</td>
+    <td class="vn" style="font-weight:600">−${f(136943)}</td></tr>`;
+
+  // III финансовая
+  h+=sec('III. Финансовая деятельность');
+  h+=`<tr><td>Финансовые операции</td><td class="vd">—</td><td class="vd">—</td><td class="vd">—</td><td class="vd">—</td><td class="vd">—</td></tr>`;
+  h+=`<tr class="r-sub"><td>Итого финансовая деятельность</td><td class="vd">—</td><td class="vd">—</td><td class="vd">—</td><td class="vd">—</td><td class="vd">—</td></tr>`;
+
+  // Итого
+  h+=`<tr class="r-tot">
+    <td>Итого расходы (включая дивиденды)</td>
+    ${E_W.map((e,i)=>`<td class="vn" style="font-weight:600">−${f(e+Math.max(-D_W[i],0))}</td>`).join('')}
+    <td class="vn" style="font-weight:600">−${f(E_TOT+Math.abs(D_TOT))}</td>
+  </tr>`;
+  h+=`<tr class="r-tot" style="background:#eff4ff">
+    <td style="font-weight:700;font-size:13.5px">Чистый денежный поток</td>
+    ${NET_W.map(v=>`<td class="${v<0?'vn':'vp'}" style="font-weight:700">${v<0?'−':''}${f(v)}</td>`).join('')}
+    <td class="${NET_TOT<0?'vn':'vp'}" style="font-weight:700;font-size:15px">${NET_TOT<0?'−':''}${f(NET_TOT)}</td>
+  </tr>`;
+
+  // Остатки
+  h+=sec('Остатки по счетам (25.04.2026)');
+  [['Банк «Точка» — расчётный',172269.54],['Банк «Точка» — депозит',7300130.73],
+   ['Альфа-банк — расчётный ИГ',-715.44],['Альфа-банк — депозит',1066759.08],
+   ['Расчётный счёт ИП Коробейникова',515186],['Депозит ИП Коробейникова',6400000],
+   ['Карта',-75480.23],['Наличка',2194569.95]
+  ].forEach(([nm,v])=>{
+    h+=`<tr class="l1"><td>${nm}</td><td colspan="4"></td><td class="${v<0?'vn':'vp'}" style="font-weight:500">${f2(v)}</td></tr>`;
+  });
+  h+=`<tr class="r-tot"><td style="font-weight:700">Итого остаток</td><td colspan="4"></td><td class="vp" style="font-weight:700;font-size:15px">${f2(17572719.63)}</td></tr>`;
+
+  document.getElementById('ddstbl').innerHTML=h;
+  document.querySelectorAll('.hid').forEach(r=>r.style.display='none');
+}
+
+function tgl(id){
+  const rows=[...document.querySelectorAll(`#${id}`)];
+  const icon=document.getElementById(`ic-${id}`);
+  const any=rows.some(r=>r.style.display!=='none');
+  rows.forEach(r=>r.style.display=any?'none':'');
+  if(icon)icon.classList.toggle('open',!any);
+}
+
+// ── CHARTS ─────────────────────────────────────────────
+function initCharts(){
+  // C1: Weekly flow
+  new Chart(document.getElementById('c1'),{type:'bar',data:{
+    labels:['30.03–05.04','06.04–12.04','13.04–19.04','20.04–26.04'],
+    datasets:[
+      {label:'Поступления',data:R_W,backgroundColor:'#1e4fdb',borderRadius:4},
+      {label:'Расходы',data:E_W.map(v=>-v),backgroundColor:'#fca5a5',borderRadius:4},
+      {label:'Дивиденды',data:D_W.map(v=>v<0?v:0),backgroundColor:'#c4b5fd',borderRadius:4},
+      {type:'line',label:'ЧДП',data:NET_W,borderColor:'#059669',borderDash:[5,3],
+       backgroundColor:'transparent',pointRadius:5,pointBackgroundColor:'#059669',tension:.3}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw!=null?` ${Math.abs(Math.round(c.raw)).toLocaleString('ru-RU')} руб.`:null}}},
+    scales:{
+      x:{ticks:{font:{size:11}},grid:{display:false},border:{display:false}},
+      y:{ticks:{font:{size:10},callback:v=>(v/1e6).toFixed(1)+'M'},grid:{color:'rgba(0,0,0,.05)'},border:{display:false}}
+    }
+  }});
+
+  // C2: Top counterparties
+  const top=CTR.slice(0,10);
+  document.getElementById('c2').parentElement.style.height=(top.length*33+60)+'px';
+  new Chart(document.getElementById('c2'),{type:'bar',data:{
+    labels:top.map(c=>c.n.length>26?c.n.slice(0,26)+'…':c.n),
+    datasets:[{data:top.map(c=>c.t),
+      backgroundColor:['#1e4fdb','#2563eb','#3b82f6','#60a5fa','#93c5fd','#bfdbfe','#bfdbfe','#bfdbfe','#bfdbfe','#bfdbfe'],borderRadius:3}]
+  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${Math.round(c.raw).toLocaleString('ru-RU')} руб.`}}},
+    scales:{
+      x:{ticks:{font:{size:10},callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':(v/1e3).toFixed(0)+'K'},grid:{display:false},border:{display:false}},
+      y:{ticks:{font:{size:11}},grid:{display:false},border:{display:false}}
+    }
+  }});
+
+  // C3: Expense donut
+  const tot3=EXST.reduce((a,b)=>a+b.v,0);
+  document.getElementById('exleg').innerHTML=EXST.map(e=>
+    `<div class="li"><div class="lsq" style="background:${e.c}"></div>${e.l}&nbsp;(${Math.round(e.v/tot3*100)}%)</div>`
+  ).join('');
+  new Chart(document.getElementById('c3'),{type:'doughnut',data:{
+    labels:EXST.map(e=>e.l),
+    datasets:[{data:EXST.map(e=>e.v),backgroundColor:EXST.map(e=>e.c),borderWidth:0,hoverBorderWidth:2}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.label}: ${Math.round(c.raw).toLocaleString('ru-RU')} руб. (${Math.round(c.raw/tot3*100)}%)`}}}
+  }});
+
+  // C4: YoY receipts
+  new Chart(document.getElementById('c4'),{type:'bar',data:{
+    labels:MN,
+    datasets:[
+      {label:'Поступления 2025',data:R25,backgroundColor:'#bfdbfe',borderRadius:3},
+      {label:'Апрель 2026',data:MN.map((_,i)=>i===3?R_TOT:null),backgroundColor:'#1e4fdb',borderRadius:3},
+      {type:'line',label:'ЧДП 2025',data:R25.map((r,i)=>r-E25[i]),
+       borderColor:'#f97316',borderDash:[4,3],backgroundColor:'transparent',
+       pointRadius:3,pointBackgroundColor:'#f97316',tension:.3}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{if(c.raw===null)return null;return ` ${Math.round(c.raw).toLocaleString('ru-RU')} руб.`;}}}},
+    scales:{
+      x:{ticks:{font:{size:11}},grid:{display:false},border:{display:false}},
+      y:{ticks:{font:{size:10},callback:v=>(v/1e6).toFixed(1)+'M'},grid:{color:'rgba(0,0,0,.05)'},border:{display:false}}
+    }
+  }});
+
+  // C5: Dividends YoY
+  new Chart(document.getElementById('c5'),{type:'bar',data:{
+    labels:MN,
+    datasets:[
+      {label:'Дивиденды 2025',data:D25,backgroundColor:'#c4b5fd',borderRadius:3},
+      {label:'Апрель 2026',data:MN.map((_,i)=>i===3?Math.abs(D_TOT):null),backgroundColor:'#7c3aed',borderRadius:3}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{if(c.raw===null)return null;return ` ${Math.round(c.raw).toLocaleString('ru-RU')} руб.`;}}}},
+    scales:{
+      x:{ticks:{font:{size:11}},grid:{display:false},border:{display:false}},
+      y:{ticks:{font:{size:10},callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':(v/1e3).toFixed(0)+'K'},grid:{color:'rgba(0,0,0,.05)'},border:{display:false}}
+    }
+  }});
+}
+
+// ── INIT ───────────────────────────────────────────────
+renderBal(BAL);
+renderKPIs('kpis1');
+renderKPIs('kpis2');
+buildDDS();
+</script>
+</body>
+</html>
